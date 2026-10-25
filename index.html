@@ -64,6 +64,7 @@
 
     <h2>Step 2 — Build the frequency table</h2>
     <p>Count how many values fall in each interval and type your frequencies in. Then work out each relative frequency as a percent of 25.</p>
+    <p>Intervals are written 0-5, 5-10, and so on. A value that lands exactly on a boundary counts in the interval it opens: exactly 15 minutes belongs in 15-20, not in 10-15. That way no value is ever counted twice.</p>
     <table id="freqTable">
       <tr><th>Minutes</th><th>Frequency</th><th>Relative frequency (%)</th></tr>
     </table>
@@ -103,7 +104,7 @@
 </div>
 
 <script>
-var BINS = [[0,4],[5,9],[10,14],[15,19],[20,24],[25,29]];
+var BINS = [[0,5],[5,10],[10,15],[15,20],[20,25],[25,30]];
 var N = 25;
 var data = [], trueFreq = [], drawn = false;
 
@@ -145,7 +146,7 @@ function generate(){
   trueFreq = BINS.map(function(){ return 0; });
   data.forEach(function(v){
     for (var b = 0; b < BINS.length; b++){
-      if (v >= BINS[b][0] && v <= BINS[b][1]){ trueFreq[b]++; break; }
+      if (v >= BINS[b][0] && v < BINS[b][1]){ trueFreq[b]++; break; }
     }
   });
   document.getElementById('dataList').textContent = data.join(',  ');
@@ -255,7 +256,9 @@ function draw(compare){
   sf.forEach(function(f, i){
     var h = (f / top) * plotH;
     ctx.fillStyle = '#1f6fb2';
-    ctx.fillRect(x0 + i * bw + 1, y0 - h, bw - 2, h);
+    ctx.fillRect(x0 + i * bw, y0 - h, bw, h);
+    ctx.strokeStyle = '#124a75'; ctx.lineWidth = 1;
+    ctx.strokeRect(x0 + i * bw + 0.5, y0 - h + 0.5, bw - 1, h - 1);
     ctx.fillStyle = '#1d2733'; ctx.textAlign = 'center';
     if (f > 0) ctx.fillText(String(f), x0 + i * bw + bw / 2, y0 - h - 5);
     ctx.fillText(BINS[i][0] + '–' + BINS[i][1], x0 + i * bw + bw / 2, y0 + 18);
