@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Frequency Table Lab — Math 2201, Unit 5</title>
+<style>
+  :root{ --ink:#1d2733; --accent:#1f6fb2; --accent2:#e07b39; --ok:#1e7d46; --bad:#b3372f; --line:#c9d3dd; --soft:#eef3f7; }
+  *{ box-sizing:border-box; }
+  body{ font-family:Verdana,Geneva,sans-serif; color:var(--ink); margin:0; background:#fff; }
+  .wrap{ max-width:900px; margin:0 auto; padding:18px 20px 30px; }
+  h1{ font-size:20px; margin:4px 0 2px; }
+  .sub{ font-size:13px; color:#54687a; margin:0 0 14px; }
+  h2{ font-size:15px; margin:20px 0 6px; }
+  p, li{ font-size:13.5px; line-height:1.5; }
+  .card{ border:1px solid var(--line); border-radius:8px; padding:12px 14px; background:var(--soft); margin:10px 0; }
+  label{ font-size:13px; font-weight:bold; }
+  input[type=text]{ font:inherit; font-size:13.5px; padding:6px 8px; border:1px solid var(--line); border-radius:6px; }
+  input[type=number]{ font:inherit; font-size:13.5px; width:80px; padding:5px 7px; border:1px solid var(--line); border-radius:6px; }
+  button{ font:inherit; font-size:13.5px; padding:8px 14px; border:none; border-radius:6px; background:var(--accent); color:#fff; cursor:pointer; margin:4px 6px 4px 0; }
+  button:hover{ filter:brightness(1.1); }
+  button.secondary{ background:#5b7186; }
+  button:disabled{ background:#a9b8c4; cursor:not-allowed; }
+  .data{ font-size:14px; line-height:1.9; word-spacing:2px; background:#fff; border:1px dashed var(--line); border-radius:6px; padding:8px 12px; }
+  table{ border-collapse:collapse; margin:8px 0; background:#fff; }
+  th, td{ border:1px solid var(--line); padding:6px 10px; font-size:13.5px; text-align:center; }
+  th{ background:var(--soft); }
+  tr.mismatch td{ background:#fbeae8; }
+  tr.match td{ background:#e9f5ee; }
+  .msg{ font-size:13.5px; margin:8px 0; min-height:20px; }
+  .msg.ok{ color:var(--ok); font-weight:bold; }
+  .msg.bad{ color:var(--bad); font-weight:bold; }
+  canvas{ border:1px solid var(--line); border-radius:6px; background:#fff; max-width:100%; }
+  textarea{ width:100%; font:inherit; font-size:13.5px; padding:7px 9px; border:1px solid var(--line); border-radius:6px; }
+  .screen-only{ }
+  #sheet{ display:none; }
+  @media print{
+    body *{ visibility:hidden; }
+    #sheet, #sheet *{ visibility:visible; }
+    #sheet{ display:block; position:absolute; top:0; left:0; width:100%; padding:10px; }
+    #sheet table th{ background:#eee !important; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Frequency Table Lab</h1>
+  <p class="sub">Mathematics 2201 — Unit 5, Statistical Reasoning. Build the table yourself, then watch it become a histogram.</p>
+
+  <div class="card screen-only">
+    <label for="nameIn">Your name:</label>
+    <input type="text" id="nameIn" size="24" autocomplete="off">
+    &nbsp;&nbsp;
+    <label for="codeIn">Data code:</label>
+    <input type="text" id="codeIn" size="16" autocomplete="off" placeholder="e.g. alex-7">
+    <button onclick="generate()">Generate my data</button>
+    <p style="margin:6px 0 0;">Your data code decides your data set — the same code always gives the same data. Your teacher can use your code to see the exact data you worked with. Use the code your teacher gave you, or your first name and a number.</p>
+  </div>
+
+  <div id="stage" style="display:none;">
+    <h2>Step 1 — Your data</h2>
+    <p>Twenty-five students recorded how many minutes they spent on homework last night. Here are the results, in the order they were collected:</p>
+    <div class="data" id="dataList"></div>
+
+    <h2>Step 2 — Build the frequency table</h2>
+    <p>Count how many values fall in each interval and type your frequencies in. Then work out each relative frequency as a percent of 25.</p>
+    <table id="freqTable">
+      <tr><th>Minutes</th><th>Frequency</th><th>Relative frequency (%)</th></tr>
+    </table>
+    <button onclick="checkTable()">Check my table</button>
+    <div class="msg" id="checkMsg"></div>
+
+    <h2>Step 3 — Generate the histogram from YOUR table</h2>
+    <p>The bars are drawn from the numbers in your table — if a bar looks wrong, the mistake is in the counting, not the drawing.</p>
+    <canvas id="chart" width="760" height="380"></canvas><br>
+    <button id="drawBtn" onclick="draw(false)">Draw my histogram</button>
+    <button id="compareBtn" class="secondary" onclick="draw(true)" disabled>Compare with the correct histogram</button>
+
+    <h2>Step 4 — Answer from your graph</h2>
+    <p><strong>a)</strong> Which interval is tallest in your histogram, and what does that tell you about the students?</p>
+    <textarea id="ansA" rows="2"></textarea>
+    <p><strong>b)</strong> How many students spent 15 or more minutes on homework? Show how you got the number from your table.</p>
+    <textarea id="ansB" rows="2"></textarea>
+
+    <h2>Step 5 — Hand in your work</h2>
+    <p>Download your graph, and print (or save as PDF) your work sheet. Hand both in where your teacher asked for them.</p>
+    <button onclick="downloadPNG()">Download graph (PNG)</button>
+    <button class="secondary" onclick="printSheet()">Print / save my work sheet</button>
+  </div>
+</div>
+
+<!-- Printable work sheet -->
+<div id="sheet">
+  <h1 style="font-size:17px;">Frequency Table Lab — Work Sheet</h1>
+  <p>Name: <span id="sName"></span> &nbsp;&nbsp; Data code: <span id="sCode"></span></p>
+  <p><strong>Data (minutes of homework, 25 students):</strong><br><span id="sData"></span></p>
+  <p><strong>My frequency table:</strong></p>
+  <table id="sTable"><tr><th>Minutes</th><th>Frequency</th><th>Relative frequency (%)</th></tr></table>
+  <p><strong>My histogram:</strong></p>
+  <img id="sImg" style="max-width:100%; border:1px solid #999;" alt="Student histogram">
+  <p><strong>a)</strong> <span id="sAnsA"></span></p>
+  <p><strong>b)</strong> <span id="sAnsB"></span></p>
+</div>
+
+<script>
+var BINS = [[0,4],[5,9],[10,14],[15,19],[20,24],[25,29]];
+var N = 25;
+var data = [], trueFreq = [], drawn = false;
+
+function hashCode(str){
+  var h = 1779033703;
+  for (var i = 0; i < str.length; i++){
+    h = Math.imul(h ^ str.charCodeAt(i), 3432918353);
+    h = (h << 13) | (h >>> 19);
+  }
+  return h >>> 0;
+}
+function mulberry32(seed){
+  var a = seed;
+  return function(){
+    a |= 0; a = (a + 0x6D2B79F5) | 0;
+    var t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+function generate(){
+  var code = document.getElementById('codeIn').value.trim();
+  if (!code){ alert('Enter a data code first.'); return; }
+  var rand = mulberry32(hashCode(code.toLowerCase()));
+  data = [];
+  // Rule: whole minutes from 0 to 29, weighted toward the middle intervals.
+  for (var i = 0; i < N; i++){
+    var r = rand();
+    var v;
+    if (r < 0.10) v = Math.floor(rand() * 5);            // 0-4
+    else if (r < 0.30) v = 5 + Math.floor(rand() * 5);   // 5-9
+    else if (r < 0.58) v = 10 + Math.floor(rand() * 5);  // 10-14
+    else if (r < 0.80) v = 15 + Math.floor(rand() * 5);  // 15-19
+    else if (r < 0.93) v = 20 + Math.floor(rand() * 5);  // 20-24
+    else v = 25 + Math.floor(rand() * 5);                // 25-29
+    data.push(v);
+  }
+  trueFreq = BINS.map(function(){ return 0; });
+  data.forEach(function(v){
+    for (var b = 0; b < BINS.length; b++){
+      if (v >= BINS[b][0] && v <= BINS[b][1]){ trueFreq[b]++; break; }
+    }
+  });
+  document.getElementById('dataList').textContent = data.join(',  ');
+  buildTable();
+  document.getElementById('checkMsg').textContent = '';
+  document.getElementById('checkMsg').className = 'msg';
+  document.getElementById('compareBtn').disabled = true;
+  drawn = false;
+  clearChart();
+  document.getElementById('stage').style.display = 'block';
+}
+
+function buildTable(){
+  var t = document.getElementById('freqTable');
+  t.innerHTML = '<tr><th>Minutes</th><th>Frequency</th><th>Relative frequency (%)</th></tr>';
+  BINS.forEach(function(b, i){
+    var tr = document.createElement('tr'); tr.id = 'row' + i;
+    tr.innerHTML = '<td>' + b[0] + '–' + b[1] + '</td>' +
+      '<td><input type="number" id="f' + i + '" min="0" max="25"></td>' +
+      '<td><input type="number" id="r' + i + '" min="0" max="100" step="any"></td>';
+    t.appendChild(tr);
+  });
+  var tr = document.createElement('tr');
+  tr.innerHTML = '<td><strong>Total</strong></td><td><strong>25</strong></td><td><strong>100%</strong></td>';
+  t.appendChild(tr);
+}
+
+function studentFreq(){
+  var out = [];
+  for (var i = 0; i < BINS.length; i++){
+    var el = document.getElementById('f' + i);
+    out.push(el && el.value !== '' ? parseInt(el.value, 10) : NaN);
+  }
+  return out;
+}
+
+function checkTable(){
+  var sf = studentFreq();
+  var msg = document.getElementById('checkMsg');
+  if (sf.some(isNaN)){
+    msg.textContent = 'Fill in every frequency first.';
+    msg.className = 'msg bad';
+    return;
+  }
+  var sum = sf.reduce(function(a, b){ return a + b; }, 0);
+  var wrongF = [], wrongR = 0, right = 0;
+  for (var i = 0; i < BINS.length; i++){
+    var row = document.getElementById('row' + i);
+    var fOk = sf[i] === trueFreq[i];
+    var rel = document.getElementById('r' + i).value;
+    var rOk = rel !== '' && Math.abs(parseFloat(rel) - (trueFreq[i] / N * 100)) < 0.6;
+    if (fOk) right++; else wrongF.push(i);
+    if (!rOk) wrongR++;
+    row.className = fOk ? 'match' : 'mismatch';
+  }
+  if (sum !== N){
+    msg.textContent = 'Your frequencies add to ' + sum + ', but there are ' + N + ' students. Some values were counted twice or missed — recount the rows marked in red.';
+    msg.className = 'msg bad';
+    return;
+  }
+  if (wrongF.length === 0 && wrongR === 0){
+    msg.textContent = 'Your table is correct — every count and every percent. Draw your histogram.';
+    msg.className = 'msg ok';
+    return;
+  }
+  var parts = [];
+  if (wrongF.length) parts.push(wrongF.length + ' of the 6 counts don\'t match the data yet (rows in red — recount those intervals from the list, one value at a time)');
+  if (wrongR) parts.push(wrongR + ' relative frequency value(s) need a second look (each student is worth 4%)');
+  msg.textContent = parts.join('; ') + '.';
+  msg.className = 'msg bad';
+}
+
+function clearChart(){
+  var c = document.getElementById('chart');
+  var ctx = c.getContext('2d');
+  ctx.clearRect(0, 0, c.width, c.height);
+}
+
+function draw(compare){
+  var sf = studentFreq();
+  if (sf.some(isNaN)){
+    document.getElementById('checkMsg').textContent = 'Fill in your frequency table first — the histogram is drawn from your numbers.';
+    document.getElementById('checkMsg').className = 'msg bad';
+    return;
+  }
+  var c = document.getElementById('chart');
+  var ctx = c.getContext('2d');
+  var W = c.width, H = c.height;
+  ctx.clearRect(0, 0, W, H);
+  var maxV = Math.max.apply(null, trueFreq.concat(sf).concat([5]));
+  var top = Math.ceil(maxV / 2) * 2;
+  var x0 = 56, y0 = H - 52, plotW = W - x0 - 24, plotH = y0 - 26;
+  ctx.strokeStyle = '#54687a'; ctx.fillStyle = '#1d2733'; ctx.lineWidth = 1;
+  ctx.font = '12px Verdana';
+  // gridlines + y labels
+  for (var g = 0; g <= top; g += 2){
+    var y = y0 - (g / top) * plotH;
+    ctx.strokeStyle = '#dbe4ec';
+    ctx.beginPath(); ctx.moveTo(x0, y); ctx.lineTo(x0 + plotW, y); ctx.stroke();
+    ctx.fillStyle = '#1d2733'; ctx.textAlign = 'right';
+    ctx.fillText(String(g), x0 - 7, y + 4);
+  }
+  // axes
+  ctx.strokeStyle = '#54687a';
+  ctx.beginPath(); ctx.moveTo(x0, 26); ctx.lineTo(x0, y0); ctx.lineTo(x0 + plotW, y0); ctx.stroke();
+  var bw = plotW / BINS.length;
+  sf.forEach(function(f, i){
+    var h = (f / top) * plotH;
+    ctx.fillStyle = '#1f6fb2';
+    ctx.fillRect(x0 + i * bw + 1, y0 - h, bw - 2, h);
+    ctx.fillStyle = '#1d2733'; ctx.textAlign = 'center';
+    if (f > 0) ctx.fillText(String(f), x0 + i * bw + bw / 2, y0 - h - 5);
+    ctx.fillText(BINS[i][0] + '–' + BINS[i][1], x0 + i * bw + bw / 2, y0 + 18);
+  });
+  if (compare){
+    ctx.strokeStyle = '#e07b39'; ctx.lineWidth = 2.5;
+    trueFreq.forEach(function(f, i){
+      var h = (f / top) * plotH;
+      ctx.strokeRect(x0 + i * bw + 1, y0 - h, bw - 2, h);
+    });
+    ctx.fillStyle = '#e07b39'; ctx.textAlign = 'left';
+    ctx.fillText('Orange outline = correct counts from the data', x0 + 6, 18);
+  }
+  ctx.fillStyle = '#1d2733'; ctx.textAlign = 'center';
+  ctx.fillText('Minutes of homework', x0 + plotW / 2, H - 8);
+  ctx.save();
+  ctx.translate(15, y0 - plotH / 2); ctx.rotate(-Math.PI / 2);
+  ctx.fillText('Frequency (students)', 0, 0);
+  ctx.restore();
+  drawn = true;
+  document.getElementById('compareBtn').disabled = false;
+}
+
+function downloadPNG(){
+  if (!drawn) draw(false);
+  var a = document.createElement('a');
+  a.download = 'my-histogram.png';
+  a.href = document.getElementById('chart').toDataURL('image/png');
+  a.click();
+}
+
+function printSheet(){
+  if (!drawn) draw(false);
+  document.getElementById('sName').textContent = document.getElementById('nameIn').value || '(no name entered)';
+  document.getElementById('sCode').textContent = document.getElementById('codeIn').value.trim();
+  document.getElementById('sData').textContent = data.join(',  ');
+  var st = document.getElementById('sTable');
+  st.innerHTML = '<tr><th>Minutes</th><th>Frequency</th><th>Relative frequency (%)</th></tr>';
+  var sf = studentFreq();
+  BINS.forEach(function(b, i){
+    var rel = document.getElementById('r' + i).value;
+    var tr = document.createElement('tr');
+    tr.innerHTML = '<td>' + b[0] + '–' + b[1] + '</td><td>' + (isNaN(sf[i]) ? '' : sf[i]) + '</td><td>' + (rel === '' ? '' : rel + '%') + '</td>';
+    st.appendChild(tr);
+  });
+  document.getElementById('sImg').src = document.getElementById('chart').toDataURL('image/png');
+  document.getElementById('sAnsA').textContent = document.getElementById('ansA').value;
+  document.getElementById('sAnsB').textContent = document.getElementById('ansB').value;
+  window.print();
+}
+</script>
+</body>
+</html>
