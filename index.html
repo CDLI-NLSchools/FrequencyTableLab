@@ -78,10 +78,27 @@
     <button id="compareBtn" class="secondary" onclick="draw(true)" disabled>Compare with the correct histogram</button>
 
     <h2>Step 4 — Answer from your graph</h2>
+    <div class="card">
+      <p style="margin-top:0;"><strong>What a quality answer includes</strong></p>
+      <ul style="margin-bottom:0;">
+        <li>For a): name the tallest interval (or both intervals, if two tie), give its frequency, and say in plain words what that means about the students — not just which bar is tallest.</li>
+        <li>For b): show the actual addition of the interval frequencies, and say why those intervals are the ones that count.</li>
+      </ul>
+    </div>
     <p><strong>a)</strong> Which interval is tallest in your histogram, and what does that tell you about the students?</p>
     <textarea id="ansA" rows="2"></textarea>
     <p><strong>b)</strong> How many students spent 15 or more minutes on homework? Show how you got the number from your table.</p>
     <textarea id="ansB" rows="2"></textarea>
+
+    <p><button class="secondary" id="exBtn" onclick="toggleExample()">See a worked example</button></p>
+    <div id="example" class="card" style="display:none;">
+      <p style="margin-top:0;"><strong>Worked example — a different class</strong></p>
+      <p>Another class of 25 students recorded these homework times: 23, 2, 22, 7, 10, 10, 23, 9, 13, 29, 13, 12, 14, 18, 25, 12, 19, 19, 20, 12, 12, 23, 5, 13, 7.</p>
+      <p>Their frequency table: 0–5: 1 student; 5–10: 4; 10–15: 10; 15–20: 3; 20–25: 5; 25–30: 2.</p>
+      <p><strong>a)</strong> The tallest interval is 10–15 minutes, with 10 of the 25 students. That tells me most students spent a moderate amount of time on homework, roughly 10 to 15 minutes, and almost nobody spent next to none: only 1 student was under 5 minutes.</p>
+      <p><strong>b)</strong> “15 or more” means the 15–20, 20–25 and 25–30 intervals. Adding their frequencies: 3 + 5 + 2 = <strong>10 students</strong>.</p>
+      <p style="margin-bottom:0;">Now compare with your answers above. If yours are missing something the example includes, edit them before you hand in your work.</p>
+    </div>
 
     <h2>Step 5 — Hand in your work</h2>
     <p>Download your graph, and print (or save as PDF) your work sheet. Hand both in where your teacher asked for them.</p>
@@ -280,6 +297,13 @@ function draw(compare){
   ctx.restore();
   drawn = true;
   document.getElementById('compareBtn').disabled = false;
+}
+
+function toggleExample(){
+  var d = document.getElementById('example');
+  var b = document.getElementById('exBtn');
+  if (d.style.display === 'none'){ d.style.display = 'block'; b.textContent = 'Hide the worked example'; }
+  else { d.style.display = 'none'; b.textContent = 'See a worked example'; }
 }
 
 function downloadPNG(){
