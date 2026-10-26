@@ -72,7 +72,7 @@
 
   <div id="stage" style="display:none;">
     <h2>Step 1 — Your data</h2>
-    <p>Twenty-five students recorded how many minutes they spent on homework last night. Here are the results, in the order they were collected:</p>
+    <p>Twenty-five students recorded how many minutes they spent completing their math homework last night. Here are the results, in the order they were collected:</p>
     <div class="data" id="dataList"></div>
     <div class="msg" id="tallyMsg"></div>
 
@@ -104,23 +104,23 @@
     </div>
     <p><strong>a)</strong> Which interval is tallest in your histogram, and what does that tell you about the students?</p>
     <textarea id="ansA" rows="2"></textarea>
-    <p><strong>b)</strong> How many students spent 15 or more minutes on homework? Show how you got the number from your table.</p>
+    <p><strong>b)</strong> How many students spent 15 or more minutes on their math homework? Show how you got the number from your table.</p>
     <textarea id="ansB" rows="2"></textarea>
 
     <p><button class="secondary" id="exBtn" onclick="toggleExample()">See a worked example</button></p>
     <div id="example" class="card" style="display:none;">
       <p style="margin-top:0;"><strong>Worked example — a different class</strong></p>
-      <p>Another class of 25 students recorded these homework times: 23, 2, 22, 7, 10, 10, 23, 9, 13, 29, 13, 12, 14, 18, 25, 12, 19, 19, 20, 12, 12, 23, 5, 13, 7.</p>
+      <p>Another class of 25 students recorded these math homework times: 23, 2, 22, 7, 10, 10, 23, 9, 13, 29, 13, 12, 14, 18, 25, 12, 19, 19, 20, 12, 12, 23, 5, 13, 7.</p>
       <p>Their frequency table: 0–5: 1 student; 5–10: 4; 10–15: 10; 15–20: 3; 20–25: 5; 25–30: 2.</p>
-      <p><strong>a)</strong> The tallest interval is 10–15 minutes, with 10 of the 25 students. That tells me most students spent a moderate amount of time on homework, roughly 10 to 15 minutes, and almost nobody spent next to none: only 1 student was under 5 minutes.</p>
+      <p><strong>a)</strong> The tallest interval is 10–15 minutes, with 10 of the 25 students. That tells me most students spent a moderate amount of time on their math homework, roughly 10 to 15 minutes, and almost nobody spent next to none: only 1 student was under 5 minutes.</p>
       <p><strong>b)</strong> “15 or more” means the 15–20, 20–25 and 25–30 intervals. Adding their frequencies: 3 + 5 + 2 = <strong>10 students</strong>.</p>
       <p style="margin-bottom:0;">Now compare with your answers above. If yours are missing something the example includes, edit them before you hand in your work.</p>
     </div>
 
     <h2>Step 5 — Extend your thinking</h2>
-    <p><strong>c)</strong> The middle value of 25 values is the 13th one. Using only your frequency table (not the original list), work out which interval the median homework time falls in. Explain how the table tells you.</p>
+    <p><strong>c)</strong> The middle value of 25 values is the 13th one. Using only your frequency table (not the original list), work out which interval the median math homework time falls in. Explain how the table tells you.</p>
     <textarea id="ansC" rows="3"></textarea>
-    <p><strong>d)</strong> The principal says: “Our students don't spend enough time on homework.” Using your histogram, argue for or against the principal. Refer to specific intervals and frequencies in your answer.</p>
+    <p><strong>d)</strong> The principal says: “Our students don't spend enough time on their math homework.” Using your histogram, argue for or against the principal. Refer to specific intervals and frequencies in your answer.</p>
     <textarea id="ansD" rows="3"></textarea>
 
     <h2>Step 6 — Hand in your work</h2>
@@ -134,7 +134,7 @@
 <div id="sheet">
   <h1 style="font-size:17px;">Frequency Table Lab — Work Sheet</h1>
   <p>Name: <span id="sName"></span> &nbsp;&nbsp; Data code: <span id="sCode"></span></p>
-  <p><strong>Data (minutes of homework, 25 students):</strong><br><span id="sData"></span></p>
+  <p><strong>Data (minutes of math homework, 25 students):</strong><br><span id="sData"></span></p>
   <p><strong>My frequency table:</strong></p>
   <table id="sTable"><tr><th>Minutes</th><th>Tally</th><th>Frequency</th><th>Relative frequency (%)</th></tr></table>
   <p><strong>My histogram:</strong></p>
@@ -410,7 +410,7 @@ function draw(compare){
     ctx.fillText('Orange outline = correct counts from the data', x0 + 6, 18);
   }
   ctx.fillStyle = '#1d2733'; ctx.textAlign = 'center';
-  ctx.fillText('Minutes of homework', x0 + plotW / 2, H - 8);
+  ctx.fillText('Minutes of math homework', x0 + plotW / 2, H - 8);
   ctx.save();
   ctx.translate(15, y0 - plotH / 2); ctx.rotate(-Math.PI / 2);
   ctx.fillText('Frequency (students)', 0, 0);
