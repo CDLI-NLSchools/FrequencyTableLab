@@ -33,6 +33,19 @@
   canvas{ border:1px solid var(--line); border-radius:6px; background:#fff; max-width:100%; }
   textarea{ width:100%; font:inherit; font-size:13.5px; padding:7px 9px; border:1px solid var(--line); border-radius:6px; }
   .screen-only{ }
+  .val{ display:inline-block; padding:2px 7px; margin:2px 1px; border:1px solid var(--line); border-radius:12px; background:#fff; cursor:pointer; font-size:14px; user-select:none; }
+  .val:hover{ border-color:var(--accent); }
+  .val.struck{ text-decoration:line-through; color:#8a99a8; background:var(--soft); }
+  @keyframes shake{ 0%,100%{ transform:translateX(0);} 25%{ transform:translateX(-4px);} 75%{ transform:translateX(4px);} }
+  .val.shake{ animation:shake 0.25s ease-in-out 2; border-color:var(--bad); }
+  tr.armed td{ background:#dcebf7; }
+  tr.match td{ background:#e9f5ee; }
+  tr.mismatch td{ background:#fbeae8; }
+  .tg{ position:relative; display:inline-block; margin-right:8px; white-space:nowrap; }
+  .tk{ display:inline-block; width:3px; height:14px; background:var(--ink); margin-right:2.5px; vertical-align:-2px; border-radius:1px; }
+  .diag{ position:absolute; left:-3px; top:6px; width:26px; height:3px; background:var(--ink); transform:rotate(-16deg); border-radius:2px; }
+  #countStatus{ font-size:13.5px; font-weight:bold; color:var(--accent); min-height:20px; margin:6px 0 0; }
+  .tallyCell{ min-width:110px; text-align:left; }
   #sheet{ display:none; }
   @media print{
     body *{ visibility:hidden; }
@@ -61,14 +74,18 @@
     <h2>Step 1 — Your data</h2>
     <p>Twenty-five students recorded how many minutes they spent on homework last night. Here are the results, in the order they were collected:</p>
     <div class="data" id="dataList"></div>
+    <div class="msg" id="tallyMsg"></div>
 
     <h2>Step 2 — Build the frequency table</h2>
-    <p>Count how many values fall in each interval and type your frequencies in. Then work out each relative frequency as a percent of 25.</p>
+    <p>Count the values the way you would on paper, one interval at a time. Click a row in the table to choose your interval, then click each value above that belongs in it: the value strikes through and a tally appears in the row. Click a struck value again to undo it. When every value is struck through, every value has been counted exactly once.</p>
     <p>Intervals are written 0-5, 5-10, and so on. A value that lands exactly on a boundary counts in the interval it opens: exactly 15 minutes belongs in 15-20, not in 10-15. That way no value is ever counted twice.</p>
+    <div id="countStatus"></div>
     <table id="freqTable">
-      <tr><th>Minutes</th><th>Frequency</th><th>Relative frequency (%)</th></tr>
+      <tr><th>Minutes</th><th>Tally</th><th>Frequency</th><th>Relative frequency (%)</th></tr>
     </table>
     <button onclick="checkTable()">Check my table</button>
+    <button class="secondary" onclick="clearBin()">Clear this interval's tallies</button>
+    <p>When your tallies are done, type each row's frequency (read it off your tallies) and work out each relative frequency as a percent of 25.</p>
     <div class="msg" id="checkMsg"></div>
 
     <h2>Step 3 — Generate the histogram from YOUR table</h2>
@@ -100,7 +117,13 @@
       <p style="margin-bottom:0;">Now compare with your answers above. If yours are missing something the example includes, edit them before you hand in your work.</p>
     </div>
 
-    <h2>Step 5 — Hand in your work</h2>
+    <h2>Step 5 — Extend your thinking</h2>
+    <p><strong>c)</strong> The middle value of 25 values is the 13th one. Using only your frequency table (not the original list), work out which interval the median homework time falls in. Explain how the table tells you.</p>
+    <textarea id="ansC" rows="3"></textarea>
+    <p><strong>d)</strong> The principal says: “Our students don't spend enough time on homework.” Using your histogram, argue for or against the principal. Refer to specific intervals and frequencies in your answer.</p>
+    <textarea id="ansD" rows="3"></textarea>
+
+    <h2>Step 6 — Hand in your work</h2>
     <p>Download your graph, and print (or save as PDF) your work sheet. Hand both in where your teacher asked for them.</p>
     <button onclick="downloadPNG()">Download graph (PNG)</button>
     <button class="secondary" onclick="printSheet()">Print / save my work sheet</button>
@@ -113,17 +136,20 @@
   <p>Name: <span id="sName"></span> &nbsp;&nbsp; Data code: <span id="sCode"></span></p>
   <p><strong>Data (minutes of homework, 25 students):</strong><br><span id="sData"></span></p>
   <p><strong>My frequency table:</strong></p>
-  <table id="sTable"><tr><th>Minutes</th><th>Frequency</th><th>Relative frequency (%)</th></tr></table>
+  <table id="sTable"><tr><th>Minutes</th><th>Tally</th><th>Frequency</th><th>Relative frequency (%)</th></tr></table>
   <p><strong>My histogram:</strong></p>
   <img id="sImg" style="max-width:100%; border:1px solid #999;" alt="Student histogram">
   <p><strong>a)</strong> <span id="sAnsA"></span></p>
   <p><strong>b)</strong> <span id="sAnsB"></span></p>
+  <p><strong>c)</strong> <span id="sAnsC"></span></p>
+  <p><strong>d)</strong> <span id="sAnsD"></span></p>
 </div>
 
 <script>
 var BINS = [[0,5],[5,10],[10,15],[15,20],[20,25],[25,30]];
 var N = 25;
 var data = [], trueFreq = [], drawn = false;
+var countedIn = [], tallyCounts = [], armed = 0;
 
 function hashCode(str){
   var h = 1779033703;
@@ -166,8 +192,15 @@ function generate(){
       if (v >= BINS[b][0] && v < BINS[b][1]){ trueFreq[b]++; break; }
     }
   });
-  document.getElementById('dataList').textContent = data.join(',  ');
+  countedIn = data.map(function(){ return -1; });
+  tallyCounts = BINS.map(function(){ return 0; });
+  document.getElementById('dataList').innerHTML = data.map(function(v, i){
+    return '<span class="val" id="v' + i + '" onclick="clickValue(' + i + ')">' + v + '</span>';
+  }).join(' ');
+  document.getElementById('tallyMsg').textContent = '';
   buildTable();
+  armBin(0);
+  updateStatus();
   document.getElementById('checkMsg').textContent = '';
   document.getElementById('checkMsg').className = 'msg';
   document.getElementById('compareBtn').disabled = true;
@@ -178,16 +211,19 @@ function generate(){
 
 function buildTable(){
   var t = document.getElementById('freqTable');
-  t.innerHTML = '<tr><th>Minutes</th><th>Frequency</th><th>Relative frequency (%)</th></tr>';
+  t.innerHTML = '<tr><th>Minutes</th><th>Tally</th><th>Frequency</th><th>Relative frequency (%)</th></tr>';
   BINS.forEach(function(b, i){
     var tr = document.createElement('tr'); tr.id = 'row' + i;
+    tr.title = 'Click to count this interval';
+    tr.onclick = function(){ armBin(i); };
     tr.innerHTML = '<td>' + b[0] + '–' + b[1] + '</td>' +
+      '<td class="tallyCell" id="tally' + i + '"></td>' +
       '<td><input type="number" id="f' + i + '" min="0" max="25"></td>' +
       '<td><input type="number" id="r' + i + '" min="0" max="100" step="any"></td>';
     t.appendChild(tr);
   });
   var tr = document.createElement('tr');
-  tr.innerHTML = '<td><strong>Total</strong></td><td><strong>25</strong></td><td><strong>100%</strong></td>';
+  tr.innerHTML = '<td><strong>Total</strong></td><td></td><td><strong>25</strong></td><td><strong>100%</strong></td>';
   t.appendChild(tr);
 }
 
@@ -198,6 +234,89 @@ function studentFreq(){
     out.push(el && el.value !== '' ? parseInt(el.value, 10) : NaN);
   }
   return out;
+}
+
+function binOf(v){
+  for (var b = 0; b < BINS.length; b++){
+    if (v >= BINS[b][0] && v < BINS[b][1]) return b;
+  }
+  return BINS.length - 1;
+}
+function binLabel(b){ return BINS[b][0] + '–' + BINS[b][1]; }
+function tallyHTML(n){
+  var out = '', full = Math.floor(n / 5), rem = n % 5;
+  for (var g = 0; g < full; g++) out += '<span class="tg"><span class="tk"></span><span class="tk"></span><span class="tk"></span><span class="tk"></span><span class="diag"></span></span>';
+  if (rem) { out += '<span class="tg">'; for (var k = 0; k < rem; k++) out += '<span class="tk"></span>'; out += '</span>'; }
+  return out;
+}
+function tallyText(n){
+  var out = [], full = Math.floor(n / 5), rem = n % 5;
+  for (var g = 0; g < full; g++) out.push('||||/');
+  if (rem) out.push('|'.repeat(rem));
+  return out.join(' ');
+}
+function renderTallies(){
+  for (var i = 0; i < BINS.length; i++){
+    var cell = document.getElementById('tally' + i);
+    if (cell) cell.innerHTML = tallyHTML(tallyCounts[i]);
+  }
+}
+function updateStatus(){
+  var counted = tallyCounts.reduce(function(a, b){ return a + b; }, 0);
+  var el = document.getElementById('countStatus');
+  el.textContent = 'Now counting: ' + binLabel(armed) + ' · Counted: ' + counted + ' of ' + N +
+    (counted === N ? ' — every value is struck through, so every value has been counted exactly once. Now read your frequencies off your tallies.' : '');
+}
+function clearCheckMarks(){
+  for (var i = 0; i < BINS.length; i++){
+    var row = document.getElementById('row' + i);
+    if (row) row.classList.remove('match', 'mismatch');
+  }
+}
+function armBin(i){
+  armed = i;
+  for (var k = 0; k < BINS.length; k++){
+    var row = document.getElementById('row' + k);
+    if (row) row.classList.toggle('armed', k === i);
+  }
+  updateStatus();
+}
+function clickValue(i){
+  var v = data[i];
+  var chip = document.getElementById('v' + i);
+  var msg = document.getElementById('tallyMsg');
+  if (countedIn[i] !== -1){
+    tallyCounts[countedIn[i]]--;
+    countedIn[i] = -1;
+    chip.className = 'val';
+    msg.textContent = '';
+    renderTallies(); clearCheckMarks(); updateStatus();
+    return;
+  }
+  var tb = binOf(v);
+  if (tb === armed){
+    countedIn[i] = armed;
+    tallyCounts[armed]++;
+    chip.className = 'val struck';
+    msg.textContent = '';
+    renderTallies(); clearCheckMarks(); updateStatus();
+  } else {
+    chip.className = 'val shake';
+    setTimeout(function(){ if (countedIn[i] === -1) chip.className = 'val'; }, 560);
+    msg.textContent = v + ' doesn\'t fall in ' + binLabel(armed) + '. It belongs in ' + binLabel(tb) + ' — click that row to count it there, or keep going with this interval.';
+    msg.className = 'msg bad';
+  }
+}
+function clearBin(){
+  for (var i = 0; i < data.length; i++){
+    if (countedIn[i] === armed){
+      countedIn[i] = -1;
+      document.getElementById('v' + i).className = 'val';
+    }
+  }
+  tallyCounts[armed] = 0;
+  document.getElementById('tallyMsg').textContent = '';
+  renderTallies(); clearCheckMarks(); updateStatus();
 }
 
 function checkTable(){
@@ -217,7 +336,8 @@ function checkTable(){
     var rOk = rel !== '' && Math.abs(parseFloat(rel) - (trueFreq[i] / N * 100)) < 0.6;
     if (fOk) right++; else wrongF.push(i);
     if (!rOk) wrongR++;
-    row.className = fOk ? 'match' : 'mismatch';
+    row.classList.remove('match', 'mismatch');
+    row.classList.add(fOk ? 'match' : 'mismatch');
   }
   if (sum !== N){
     msg.textContent = 'Your frequencies add to ' + sum + ', but there are ' + N + ' students. Some values were counted twice or missed — recount the rows marked in red.';
@@ -320,17 +440,19 @@ function printSheet(){
   document.getElementById('sCode').textContent = document.getElementById('codeIn').value.trim();
   document.getElementById('sData').textContent = data.join(',  ');
   var st = document.getElementById('sTable');
-  st.innerHTML = '<tr><th>Minutes</th><th>Frequency</th><th>Relative frequency (%)</th></tr>';
+  st.innerHTML = '<tr><th>Minutes</th><th>Tally</th><th>Frequency</th><th>Relative frequency (%)</th></tr>';
   var sf = studentFreq();
   BINS.forEach(function(b, i){
     var rel = document.getElementById('r' + i).value;
     var tr = document.createElement('tr');
-    tr.innerHTML = '<td>' + b[0] + '–' + b[1] + '</td><td>' + (isNaN(sf[i]) ? '' : sf[i]) + '</td><td>' + (rel === '' ? '' : rel + '%') + '</td>';
+    tr.innerHTML = '<td>' + b[0] + '–' + b[1] + '</td><td>' + tallyText(tallyCounts[i]) + '</td><td>' + (isNaN(sf[i]) ? '' : sf[i]) + '</td><td>' + (rel === '' ? '' : rel + '%') + '</td>';
     st.appendChild(tr);
   });
   document.getElementById('sImg').src = document.getElementById('chart').toDataURL('image/png');
   document.getElementById('sAnsA').textContent = document.getElementById('ansA').value;
   document.getElementById('sAnsB').textContent = document.getElementById('ansB').value;
+  document.getElementById('sAnsC').textContent = document.getElementById('ansC').value;
+  document.getElementById('sAnsD').textContent = document.getElementById('ansD').value;
   window.print();
 }
 </script>
